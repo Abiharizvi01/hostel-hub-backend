@@ -10,40 +10,42 @@ const generateToken = (id) => {
 };
 
 
+// controllers/authController.js
 
 export const registerUser = async (req, res) => {
-  const { name, email, collegeId, password, role } = req.body;
+  const { name, email, collegeId, password } = req.body;
 
   try {
-    // Universal check: see if email or collegeId is already taken
+    // 1. Check if the collegeId is on the pre-approved list
+    const isApproved = await Whitelist.findOne({
+      collegeId: collegeId.toUpperCase(),
+    });
+    if (!isApproved) {
+      return res
+        .status(403)
+        .json({ message: 'This College ID is not authorized to register.' });
+    }
+
+    // 2. Check if the user/email/ID already exists
     const userExists = await User.findOne({ $or: [{ email }, { collegeId }] });
     if (userExists) {
-      return res.status(400).json({ message: 'User with this email or College ID already exists' });
+      return res
+        .status(400)
+        .json({ message: 'User with this email or College ID already exists' });
     }
 
-    // Logic specifically for Student registration
-    if (!role || role === 'Student') {
-      if (!collegeId) {
-        return res.status(400).json({ message: 'College ID is required for student registration' });
-      }
-      const isApproved = await Whitelist.findOne({ collegeId: collegeId.toUpperCase() });
-      if (!isApproved) {
-        return res.status(403).json({ message: 'This College ID is not authorized to register.' });
-      }
-      // If approved, we will remove them from the whitelist after they register
-      await Whitelist.deleteOne({ collegeId: collegeId.toUpperCase() });
-    }
-
-    // Create the user (works for both roles)
+    // 3. Create the new user - role is automatically 'Student'
     const user = await User.create({
       name,
       email,
-      collegeId, // Will be undefined for Warden, which is okay
+      collegeId,
       password,
-      role,
+      role: 'Student', // Role is hardcoded to 'Student' for security
     });
 
     if (user) {
+      // Remove from the whitelist to prevent re-registration
+      await Whitelist.deleteOne({ collegeId: collegeId.toUpperCase() });
       res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -55,7 +57,6 @@ export const registerUser = async (req, res) => {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
-    console.error(error); // For debugging
     res.status(500).json({ message: 'Server Error' });
   }
 };
