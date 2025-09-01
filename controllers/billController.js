@@ -1,5 +1,5 @@
 import Bill from '../models/Bill.js';
-import User from '../models/User.js';
+import User from '../models/user.js';
 
 // @desc    Create a new bill (Warden only)
 // @route   POST /api/bills

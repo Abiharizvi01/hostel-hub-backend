@@ -1,5 +1,5 @@
 import Whitelist from '../models/Whitelist.js';
-import User from '../models/User.js';
+import User from '../models/user.js';
 // @desc    Add a student to the whitelist
 // @route   POST /api/warden/whitelist
 export const addToWhitelist = async (req, res) => {

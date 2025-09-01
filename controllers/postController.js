@@ -1,6 +1,6 @@
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
-import User from '../models/User.js';
+import User from '../models/user.js';
 
 // --- CREATE, GET ALL, GET BY ID, CREATE COMMENT (No changes here) ---
 
