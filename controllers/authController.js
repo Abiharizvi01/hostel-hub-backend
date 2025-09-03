@@ -15,8 +15,12 @@ const generateToken = (id) => {
 export const registerUser = async (req, res) => {
   const { name, email, collegeId, password } = req.body;
 
+  // This is the new, crucial check
+  if (!collegeId) {
+    return res.status(400).json({ message: 'College ID is required.' });
+  }
+
   try {
-    // 1. Check if the collegeId is on the pre-approved list
     const isApproved = await Whitelist.findOne({
       collegeId: collegeId.toUpperCase(),
     });
@@ -26,7 +30,6 @@ export const registerUser = async (req, res) => {
         .json({ message: 'This College ID is not authorized to register.' });
     }
 
-    // 2. Check if the user/email/ID already exists
     const userExists = await User.findOne({ $or: [{ email }, { collegeId }] });
     if (userExists) {
       return res
@@ -34,17 +37,15 @@ export const registerUser = async (req, res) => {
         .json({ message: 'User with this email or College ID already exists' });
     }
 
-    // 3. Create the new user - role is automatically 'Student'
     const user = await User.create({
       name,
       email,
       collegeId,
       password,
-      role: 'Student', // Role is hardcoded to 'Student' for security
+      role: 'Student',
     });
 
     if (user) {
-      // Remove from the whitelist to prevent re-registration
       await Whitelist.deleteOne({ collegeId: collegeId.toUpperCase() });
       res.status(201).json({
         _id: user._id,
